@@ -8,28 +8,7 @@ import os
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 
-@app.route('/')
-def index():
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    return render_template('index.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if username == 'admin' and password == '123':
-            session['logged_in'] = True
-            return redirect(url_for('index'))
-        else:
-            return render_template('login.html', error='Invalid credentials')
-    return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('login'))
 
 @app.route('/scan', methods=['POST'])
 def scan():
