@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scan Result</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .result-box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      max-width: 700px;
+      width: 100%;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    li strong {
+      color: #007BFF;
+    }
+    canvas {
+      margin-top: 30px;
+      max-width: 100%;
+    }
+    a {
+        display: inline-block;
+        margin: 20px 0;
+        padding: 10px 18px;
+        background-color: #09b599;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+    }
+
+    a:hover {
+        background-color: #1abf61;
+    }
+     a {
+            padding: 8px 14px;
+            font-size: 14px;
+        }
+  </style>
+</head>
+<body>
+  <h2>🔍 Scan Result for: {{ url }}</h2>
+  <div class="result-box">
+    <ul>
+      <li><strong>Status:</strong> {{ result.status }}</li>
+      <li><strong>XSS:</strong> {{ result.xss }}</li>
+      <li><strong>Clickjacking:</strong> {{ result.clickjacking }}</li>
+      <li><strong>SQL Injection:</strong> {{ result.sqli }}</li>
+      <li><strong>Broken Authentication:</strong>
+        <ul>
+          {% for issue in result.auth %}
+            <li>{{ issue }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+      <li><strong>Security Misconfiguration:</strong>
+        <ul>
+          {% for issue in result.misconfig %}
+            <li>{{ issue }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+    </ul>
+
+    <h3>🛡 Security Headers</h3>
+    {% if result.headers %}
+      <ul>
+        {% for key, value in result.headers.items() %}
+          <li><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No security headers detected.</p>
+    {% endif %}
+
+    <canvas id="vulnChart" width="400" height="200"></canvas>
+  </div>
+ <a href="/">🔁 Scan another site</a>
+ <a href="{{ url_for('download', fmt='html') }}">⬇ Download as HTML</a>
+<a href="{{ url_for('download', fmt='pdf') }}">⬇ Download as PDF</a>
+  <script>
+    const ctx = document.getElementById('vulnChart').getContext('2d');
+    const vulnChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['XSS', 'Clickjacking', 'SQL Injection', 'Broken Auth', 'Misconfig'],
+        datasets: [{
+          label: 'Vulnerability Status',
+        data: [
+  {{ 1 if result.xss_flag else 0 }},
+  {{ 1 if result.clickjacking_flag else 0 }},
+  {{ 1 if result.sqli_flag else 0 }},
+  {{ 1 if result.auth_flag else 0 }},
+  {{ 1 if result.misconfig_flag else 0 }}
+],
+          backgroundColor: [
+            'rgba(255,99,132,0.7)',
+            'rgba(255,206,86,0.7)',
+            'rgba(54,162,235,0.7)',
+            'rgba(75,192,192,0.7)',
+            'rgba(153,102,255,0.7)'
+          ],
+          borderColor: [
+            'rgba(255,99,132,1)',
+            'rgba(255,206,86,1)',
+            'rgba(54,162,235,1)',
+            'rgba(75,192,192,1)',
+            'rgba(153,102,255,1)'
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: 'Detected Vulnerabilities',
+            font: { size: 18 }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              callback: function(value) {
+                return value === 0 ? 'Safe' : value === 1 ? 'Issue Found' : value + ' Issues'
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
